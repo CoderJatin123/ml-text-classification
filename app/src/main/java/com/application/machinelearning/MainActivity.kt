@@ -12,6 +12,9 @@ import org.pytorch.Tensor
 
 
 class MainActivity : AppCompatActivity() {
+
+    val FEATURE_INPUT_SIZE = 8
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,25 +37,26 @@ class MainActivity : AppCompatActivity() {
         )
 
 
-        val tfidfWeights = hashMapOf(
-            "your" to 0.8f,
-            "is" to 0.7f,
-            "cash" to 1.2f,
-            "account" to 1.1f,
-            "otp" to 1.5f,
-            "credited" to 1.3f,
-            "won" to 1.4f,
-            "prize" to 1.6f
+        val tfidfWeights = floatArrayOf(
+            0.8f,
+            0.7f,
+            1.2f,
+            1.1f,
+            1.5f,
+            1.3f,
+            1.4f,
+            1.6f
         )
 
         val classMap = HashMap<Int, String>()
+
         classMap.put(0, "OTP")
         classMap.put(1, "Transaction")
         classMap.put(2, "Spam")
 
         val module = LiteModuleLoader.load(assetFilePath(this, "msg_model.ptl"))
         val inputData = getTfidfVector("Your otp is 12345", wordIndexMap, tfidfWeights)
-        val inputTensor = Tensor.fromBlob(inputData, longArrayOf(1, 8))
+        val inputTensor = Tensor.fromBlob(inputData, longArrayOf(1, FEATURE_INPUT_SIZE.toLong()))
 
         val output = module.forward(IValue.from(inputTensor)).toTensor()
         val outputData = output.dataAsFloatArray
@@ -72,16 +76,15 @@ class MainActivity : AppCompatActivity() {
     fun getTfidfVector(
         message: String,
         wordIndexMap: Map<String, Int>,
-        tfidfWeights: Map<String, Float>
+        tfidfWeights: FloatArray
     ): FloatArray {
         val words = message.lowercase().split(" ")
-        val vector = FloatArray(wordIndexMap.size) { 0f }
+        val vector = FloatArray(FEATURE_INPUT_SIZE) { 0f }
 
         for (word in words) {
             val index = wordIndexMap[word]
-            val weight = tfidfWeights[word]
-            if (index != null && weight != null) {
-                vector[index] = weight
+            if (index != null) {
+                vector[index] = tfidfWeights[index]
             }
         }
         return vector
